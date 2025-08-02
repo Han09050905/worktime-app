@@ -1,4 +1,13 @@
-const { createClient } = require('@supabase/supabase-js');
+let createClient;
+try {
+  const supabaseModule = require('@supabase/supabase-js');
+  createClient = supabaseModule.createClient;
+} catch (error) {
+  console.error('❌ 無法載入 @supabase/supabase-js:', error.message);
+  console.error('請確保已安裝 Supabase 依賴: npm install @supabase/supabase-js');
+  process.exit(1);
+}
+
 require('dotenv').config();
 
 // Supabase配置
