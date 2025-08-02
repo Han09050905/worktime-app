@@ -8,9 +8,22 @@ services:
       echo "Directory contents:"
       ls -la
       
-      echo "Running build script..."
-      chmod +x build.sh
-      ./build.sh
+      echo "Installing dependencies..."
+      npm install
+      cd client && npm install && cd ..
+      cd server && npm install && cd ..
+      
+      echo "Building frontend..."
+      cd client && npm run build && cd ..
+      
+      echo "Checking build output..."
+      ls -la client/build/
+      
+      echo "Copying build files to server directory..."
+      cp -r client/build server/
+      
+      echo "Verifying server build directory..."
+      ls -la server/build/
       
       echo "Build process finished."
     startCommand: NODE_ENV=production node server/index.js

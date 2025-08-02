@@ -15,6 +15,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // 生產環境：服務靜態檔案
 if (process.env.NODE_ENV === 'production') {
   const fs = require('fs');
+  const { execSync } = require('child_process');
+  
+  console.log('🔧 生產環境：準備靜態檔案...');
+  console.log('當前目錄:', __dirname);
+  
+  // 嘗試複製建置檔案（如果不存在）
+  const buildPath = path.join(__dirname, 'build');
+  const clientBuildPath = path.join(__dirname, '../client/build');
+  
+  if (!fs.existsSync(buildPath) && fs.existsSync(clientBuildPath)) {
+    console.log('📋 複製建置檔案到伺服器目錄...');
+    try {
+      execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
+      console.log('✅ 建置檔案複製成功');
+    } catch (error) {
+      console.log('❌ 複製失敗:', error.message);
+    }
+  }
   
   // 嘗試多個可能的靜態檔案路徑
   const possiblePaths = [
@@ -25,9 +43,11 @@ if (process.env.NODE_ENV === 'production') {
     path.join(__dirname, '../../build')
   ];
   
-  console.log('當前目錄:', __dirname);
   console.log('嘗試的靜態檔案路徑:');
-  possiblePaths.forEach((p, i) => console.log(`  ${i + 1}. ${p}`));
+  possiblePaths.forEach((p, i) => {
+    const exists = fs.existsSync(p);
+    console.log(`  ${i + 1}. ${p} ${exists ? '✅' : '❌'}`);
+  });
   
   let staticPath = null;
   for (const p of possiblePaths) {
