@@ -14,8 +14,34 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // 生產環境：服務靜態檔案
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  console.log('靜態檔案路徑:', path.join(__dirname, '../client/build'));
+  const staticPath = path.join(__dirname, '../client/build');
+  console.log('靜態檔案路徑:', staticPath);
+  
+  // 檢查靜態檔案是否存在
+  const fs = require('fs');
+  if (fs.existsSync(staticPath)) {
+    app.use(express.static(staticPath));
+    console.log('✅ 靜態檔案路徑存在，已啟用');
+    
+    // 列出靜態檔案目錄內容
+    try {
+      const files = fs.readdirSync(staticPath);
+      console.log('靜態檔案目錄內容:', files);
+    } catch (err) {
+      console.log('無法讀取靜態檔案目錄:', err.message);
+    }
+  } else {
+    console.log('⚠️ 靜態檔案路徑不存在，跳過靜態檔案服務');
+    console.log('當前目錄:', __dirname);
+    console.log('嘗試列出上層目錄內容...');
+    try {
+      const parentDir = path.join(__dirname, '..');
+      const files = fs.readdirSync(parentDir);
+      console.log('上層目錄內容:', files);
+    } catch (err) {
+      console.log('無法讀取上層目錄:', err.message);
+    }
+  }
 }
 
 // 初始化Supabase
