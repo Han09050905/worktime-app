@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: worktime-app
+    env: node
+    buildCommand: npm run install-all && cd client && npm run build
+    startCommand: NODE_ENV=production node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+    healthCheckPath: /api/projects
+    autoDeploy: true 
