@@ -4,11 +4,14 @@ services:
     env: node
     buildCommand: |
       echo "Starting build process..."
-      npm run install-all
-      echo "Building frontend..."
-      npm run build
-      echo "Copying build files to server directory..."
-      cp -r client/build server/
+      echo "Current directory: $(pwd)"
+      echo "Directory contents:"
+      ls -la
+      
+      echo "Running build script..."
+      chmod +x build.sh
+      ./build.sh
+      
       echo "Build process finished."
     startCommand: NODE_ENV=production node server/index.js
     envVars:

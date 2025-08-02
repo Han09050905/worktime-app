@@ -281,7 +281,38 @@ app.delete('/api/projects/:id', async (req, res) => {
 // 生產環境：所有其他請求都返回React應用程式
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build/index.html'));
+    const indexPath = path.join(__dirname, 'build/index.html');
+    console.log('嘗試提供 index.html:', indexPath);
+    
+    // 檢查檔案是否存在
+    if (require('fs').existsSync(indexPath)) {
+      console.log('✅ index.html 檔案存在，正在提供...');
+      res.sendFile(indexPath);
+    } else {
+      console.log('❌ index.html 檔案不存在');
+      console.log('當前目錄內容:', require('fs').readdirSync(__dirname));
+      
+      // 嘗試其他可能的路徑
+      const alternativePaths = [
+        path.join(__dirname, '../client/build/index.html'),
+        path.join(__dirname, '../../client/build/index.html'),
+        path.join(__dirname, '../build/index.html')
+      ];
+      
+      for (const altPath of alternativePaths) {
+        if (require('fs').existsSync(altPath)) {
+          console.log(`✅ 找到替代路徑: ${altPath}`);
+          return res.sendFile(altPath);
+        }
+      }
+      
+      // 如果都找不到，返回錯誤
+      res.status(404).json({ 
+        error: 'index.html not found',
+        message: '前端應用程式檔案未找到，請檢查建置流程',
+        paths: [indexPath, ...alternativePaths]
+      });
+    }
   });
 }
 
