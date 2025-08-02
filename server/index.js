@@ -20,17 +20,77 @@ if (process.env.NODE_ENV === 'production') {
   console.log('🔧 生產環境：準備靜態檔案...');
   console.log('當前目錄:', __dirname);
   
-  // 嘗試複製建置檔案（如果不存在）
+  // 檢查並建置前端（如果需要）
   const buildPath = path.join(__dirname, 'build');
   const clientBuildPath = path.join(__dirname, '../client/build');
+  const clientPath = path.join(__dirname, '../client');
   
-  if (!fs.existsSync(buildPath) && fs.existsSync(clientBuildPath)) {
-    console.log('📋 複製建置檔案到伺服器目錄...');
+  if (!fs.existsSync(buildPath)) {
+    console.log('📋 伺服器目錄中沒有建置檔案，創建基本建置目錄...');
+    
+    // 創建建置目錄
     try {
-      execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
-      console.log('✅ 建置檔案複製成功');
+      fs.mkdirSync(buildPath, { recursive: true });
+      console.log('✅ 建置目錄創建成功');
+      
+      // 複製備用 HTML 檔案作為 index.html
+      const fallbackPath = path.join(__dirname, 'fallback.html');
+      if (fs.existsSync(fallbackPath)) {
+        const indexContent = fs.readFileSync(fallbackPath, 'utf8');
+        fs.writeFileSync(path.join(buildPath, 'index.html'), indexContent);
+        console.log('✅ 備用 HTML 檔案複製為 index.html');
+      } else {
+        // 創建一個基本的 index.html
+        const basicHtml = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工時統計應用程式</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .status { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .api-test { margin-top: 20px; }
+        button { background: #2196f3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>工時統計應用程式</h1>
+        <div class="status">
+            <strong>後端 API 伺服器正在運行</strong><br>
+            前端建置檔案未找到，但 API 功能正常
+        </div>
+        <div class="api-test">
+            <h3>API 測試</h3>
+            <button onclick="testAPI('/api/projects')">測試專案 API</button>
+            <button onclick="testAPI('/api/work-records')">測試工時記錄 API</button>
+            <div id="api-result" class="result"></div>
+        </div>
+    </div>
+    <script>
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '測試中...';
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                resultDiv.innerHTML = '✅ ' + endpoint + ' 正常\\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.innerHTML = '❌ ' + endpoint + ' 錯誤\\n' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>`;
+        fs.writeFileSync(path.join(buildPath, 'index.html'), basicHtml);
+        console.log('✅ 基本 HTML 檔案創建成功');
+      }
     } catch (error) {
-      console.log('❌ 複製失敗:', error.message);
+      console.log('❌ 創建建置目錄失敗:', error.message);
     }
   }
   
@@ -326,12 +386,19 @@ if (process.env.NODE_ENV === 'production') {
         }
       }
       
-      // 如果都找不到，返回錯誤
-      res.status(404).json({ 
-        error: 'index.html not found',
-        message: '前端應用程式檔案未找到，請檢查建置流程',
-        paths: [indexPath, ...alternativePaths]
-      });
+      // 如果都找不到，使用備用 HTML
+      const fallbackPath = path.join(__dirname, 'fallback.html');
+      if (require('fs').existsSync(fallbackPath)) {
+        console.log('📄 使用備用 HTML 檔案');
+        return res.sendFile(fallbackPath);
+      } else {
+        // 如果連備用檔案都沒有，返回錯誤
+        res.status(404).json({ 
+          error: 'index.html not found',
+          message: '前端應用程式檔案未找到，請檢查建置流程',
+          paths: [indexPath, ...alternativePaths]
+        });
+      }
     }
   });
 }
