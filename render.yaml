@@ -37,6 +37,12 @@ services:
         exit 1
       fi
       
+      echo "Final verification..."
+      echo "Server directory contents:"
+      ls -la server/
+      echo "Server build directory contents:"
+      ls -la server/build/
+      
       echo "Build process finished."
     startCommand: NODE_ENV=production node server/index.js
     envVars:
