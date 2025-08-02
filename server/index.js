@@ -14,14 +14,33 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // 生產環境：服務靜態檔案
 if (process.env.NODE_ENV === 'production') {
-  const staticPath = path.join(__dirname, '../client/build');
-  console.log('靜態檔案路徑:', staticPath);
-  
-  // 檢查靜態檔案是否存在
   const fs = require('fs');
-  if (fs.existsSync(staticPath)) {
+  
+  // 嘗試多個可能的靜態檔案路徑
+  const possiblePaths = [
+    path.join(__dirname, 'build'),
+    path.join(__dirname, '../client/build'),
+    path.join(__dirname, '../../client/build'),
+    path.join(__dirname, '../build'),
+    path.join(__dirname, '../../build')
+  ];
+  
+  console.log('當前目錄:', __dirname);
+  console.log('嘗試的靜態檔案路徑:');
+  possiblePaths.forEach((p, i) => console.log(`  ${i + 1}. ${p}`));
+  
+  let staticPath = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      staticPath = p;
+      console.log(`✅ 找到靜態檔案路徑: ${p}`);
+      break;
+    }
+  }
+  
+  if (staticPath) {
     app.use(express.static(staticPath));
-    console.log('✅ 靜態檔案路徑存在，已啟用');
+    console.log('✅ 靜態檔案服務已啟用');
     
     // 列出靜態檔案目錄內容
     try {
@@ -31,15 +50,18 @@ if (process.env.NODE_ENV === 'production') {
       console.log('無法讀取靜態檔案目錄:', err.message);
     }
   } else {
-    console.log('⚠️ 靜態檔案路徑不存在，跳過靜態檔案服務');
-    console.log('當前目錄:', __dirname);
-    console.log('嘗試列出上層目錄內容...');
+    console.log('⚠️ 未找到靜態檔案路徑，跳過靜態檔案服務');
+    
+    // 列出當前目錄和上層目錄內容
     try {
+      const currentDir = fs.readdirSync(__dirname);
+      console.log('當前目錄內容:', currentDir);
+      
       const parentDir = path.join(__dirname, '..');
-      const files = fs.readdirSync(parentDir);
-      console.log('上層目錄內容:', files);
+      const parentFiles = fs.readdirSync(parentDir);
+      console.log('上層目錄內容:', parentFiles);
     } catch (err) {
-      console.log('無法讀取上層目錄:', err.message);
+      console.log('無法讀取目錄:', err.message);
     }
   }
 }
@@ -253,7 +275,7 @@ app.delete('/api/projects/:id', async (req, res) => {
 // 生產環境：所有其他請求都返回React應用程式
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+    res.sendFile(path.join(__dirname, 'build/index.html'));
   });
 }
 

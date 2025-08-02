@@ -3,10 +3,13 @@ services:
     name: worktime-app
     env: node
     buildCommand: |
-      npm install
-      cd server && npm install --production
-      cd ../client && npm install
+      echo "Starting build process..."
+      npm run install-all
+      echo "Building frontend..."
       npm run build
+      echo "Copying build files to server directory..."
+      cp -r client/build server/
+      echo "Build process finished."
     startCommand: NODE_ENV=production node server/index.js
     envVars:
       - key: NODE_ENV
