@@ -15,7 +15,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // 生產環境：服務靜態檔案
 if (process.env.NODE_ENV === 'production') {
   const fs = require('fs');
-  const { execSync } = require('child_process');
   
   console.log('🔧 生產環境：準備靜態檔案...');
   console.log('當前目錄:', __dirname);
@@ -23,41 +22,10 @@ if (process.env.NODE_ENV === 'production') {
   // 檢查並建置前端（如果需要）
   const buildPath = path.join(__dirname, 'build');
   const clientBuildPath = path.join(__dirname, '../client/build');
-  const clientPath = path.join(__dirname, '../client');
   
   if (!fs.existsSync(buildPath)) {
-    console.log('📋 伺服器目錄中沒有建置檔案，嘗試建置前端...');
-    
-    // 嘗試建置前端
-    const clientPath = path.join(__dirname, '../client');
-    if (fs.existsSync(clientPath)) {
-      console.log('✅ 找到 client 目錄，嘗試建置前端...');
-      try {
-        // 安裝依賴
-        console.log('📦 安裝前端依賴...');
-        execSync('npm install', { cwd: clientPath, stdio: 'pipe' });
-        
-        // 建置前端
-        console.log('🔨 建置前端應用程式...');
-        execSync('npm run build', { cwd: clientPath, stdio: 'pipe' });
-        
-        // 複製建置檔案
-        if (fs.existsSync(clientBuildPath)) {
-          console.log('📋 複製建置檔案到伺服器目錄...');
-          execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
-          console.log('✅ 前端建置檔案複製成功');
-        } else {
-          console.log('❌ 前端建置失敗，client/build 目錄不存在');
-          createFallbackBuild();
-        }
-      } catch (error) {
-        console.log('❌ 建置過程失敗:', error.message);
-        createFallbackBuild();
-      }
-    } else {
-      console.log('❌ client 目錄不存在，創建備用建置...');
-      createFallbackBuild();
-    }
+    console.log('📋 伺服器目錄中沒有建置檔案，創建備用建置...');
+    createFallbackBuild();
   }
 
   function createFallbackBuild() {
@@ -183,6 +151,15 @@ console.log('🔍 環境變數檢查:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ 已設定' : '❌ 未設定');
 console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? '✅ 已設定' : '❌ 未設定');
+
+// 健康檢查端點
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // 初始化Supabase
 initDatabase();
