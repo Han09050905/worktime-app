@@ -26,9 +26,25 @@ if (process.env.NODE_ENV === 'production') {
   const clientPath = path.join(__dirname, '../client');
   
   if (!fs.existsSync(buildPath)) {
-    console.log('📋 伺服器目錄中沒有建置檔案，創建基本建置目錄...');
+    console.log('📋 伺服器目錄中沒有建置檔案，嘗試複製前端建置...');
     
-    // 創建建置目錄
+    // 嘗試複製前端建置檔案
+    if (fs.existsSync(clientBuildPath)) {
+      console.log('✅ 找到前端建置檔案，正在複製...');
+      try {
+        execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
+        console.log('✅ 前端建置檔案複製成功');
+      } catch (error) {
+        console.log('❌ 複製前端建置檔案失敗:', error.message);
+        createFallbackBuild();
+      }
+    } else {
+      console.log('❌ 前端建置檔案不存在，創建備用建置...');
+      createFallbackBuild();
+    }
+  }
+
+  function createFallbackBuild() {
     try {
       fs.mkdirSync(buildPath, { recursive: true });
       console.log('✅ 建置目錄創建成功');

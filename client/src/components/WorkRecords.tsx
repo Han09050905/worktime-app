@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 interface WorkRecord {
@@ -25,21 +25,16 @@ const WorkRecords: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchProjects();
-    fetchRecords();
-  }, []);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await axios.get('/api/projects');
       setProjects(response.data);
     } catch (error) {
       console.error('獲取專案失敗:', error);
     }
-  };
+  }, []);
 
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -55,7 +50,12 @@ const WorkRecords: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterProject, filterStartDate, filterEndDate]);
+
+  useEffect(() => {
+    fetchProjects();
+    fetchRecords();
+  }, [fetchProjects, fetchRecords]);
 
   const handleDeleteRecord = async (recordId: number) => {
     if (!window.confirm('確定要刪除這筆工時記錄嗎？')) {
@@ -141,60 +141,62 @@ const WorkRecords: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ marginTop: '15px' }}>
+        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
           <button className="btn btn-primary" onClick={handleFilter}>
             篩選
           </button>
-          <button className="btn btn-primary" onClick={clearFilters} style={{ marginLeft: '10px' }}>
+          <button className="btn btn-secondary" onClick={clearFilters}>
             清除篩選
           </button>
         </div>
       </div>
 
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <h3>記錄列表</h3>
-          <div>
-            <strong>總工時: {totalHours.toFixed(1)} 小時</strong>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>工時記錄列表</h3>
+          <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#007bff' }}>
+            總工時: {totalHours.toFixed(1)} 小時
           </div>
         </div>
 
         {loading ? (
-          <p>載入中...</p>
+          <div>載入中...</div>
         ) : records.length === 0 ? (
-          <p>沒有找到工時記錄。</p>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+            沒有找到工時記錄
+          </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>專案</th>
-                <th>工時</th>
-                <th>描述</th>
-                <th>建立時間</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map(record => (
-                <tr key={record.id}>
-                  <td>{new Date(record.date).toLocaleDateString('zh-TW')}</td>
-                  <td>{record.project_name}</td>
-                  <td>{record.hours} 小時</td>
-                  <td>{record.description || '-'}</td>
-                  <td>{new Date(record.created_at).toLocaleString('zh-TW')}</td>
-                  <td>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDeleteRecord(record.id)}
-                    >
-                      刪除
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>專案</th>
+                  <th>工時</th>
+                  <th>描述</th>
+                  <th>操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {records.map(record => (
+                  <tr key={record.id}>
+                    <td>{new Date(record.date).toLocaleDateString('zh-TW')}</td>
+                    <td>{record.project_name}</td>
+                    <td>{record.hours} 小時</td>
+                    <td>{record.description || '-'}</td>
+                    <td>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteRecord(record.id)}
+                      >
+                        刪除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

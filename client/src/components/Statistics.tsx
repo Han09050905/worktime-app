@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-interface Statistics {
+interface StatisticsData {
   total_hours: number;
   project_statistics: Array<{
     name: string;
@@ -19,7 +19,7 @@ interface Statistics {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
 const Statistics: React.FC = () => {
-  const [statistics, setStatistics] = useState<Statistics | null>(null);
+  const [statistics, setStatistics] = useState<StatisticsData | null>(null);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -34,13 +34,7 @@ const Statistics: React.FC = () => {
     setEndDate(lastDay.toISOString().split('T')[0]);
   }, []);
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      fetchStatistics();
-    }
-  }, [startDate, endDate]);
-
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get(`/api/statistics?start_date=${startDate}&end_date=${endDate}`);
@@ -50,7 +44,13 @@ const Statistics: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      fetchStatistics();
+    }
+  }, [startDate, endDate, fetchStatistics]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
