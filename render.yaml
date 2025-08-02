@@ -2,7 +2,7 @@ services:
   - type: web
     name: worktime-app
     env: node
-    buildCommand: npm run render-build
+    buildCommand: npm install && cd server && npm install --production && cd ../client && npm install && npm run build
     startCommand: NODE_ENV=production node server/index.js
     envVars:
       - key: NODE_ENV
