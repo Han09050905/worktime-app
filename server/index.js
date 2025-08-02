@@ -66,6 +66,12 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+// 檢查環境變數
+console.log('🔍 環境變數檢查:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ 已設定' : '❌ 未設定');
+console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? '✅ 已設定' : '❌ 未設定');
+
 // 初始化Supabase
 initDatabase();
 
