@@ -10,7 +10,7 @@
     "build": "cd client && npm run build",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "start": "NODE_ENV=production node server/index.js",
-    "render-build": "npm run install-all && npm run build"
+    "render-build": "npm install && cd server && npm install && cd ../client && npm install && npm run build"
   },
   "keywords": ["工時", "管理", "專案"],
   "author": "",
