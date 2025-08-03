@@ -53,7 +53,7 @@ echo "  - 總檔案數: $(find server/build -type f | wc -l)"
 
 # 測試伺服器啟動
 echo "🚀 測試伺服器啟動..."
-timeout 10s node server/index.js &
+node server/index.js &
 SERVER_PID=$!
 
 # 等待伺服器啟動

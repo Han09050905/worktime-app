@@ -2,7 +2,7 @@
 
 set -e  # 遇到錯誤就停止執行
 
-echo "🚀 開始前端建置流程..."
+echo "🚀 Render.com 專用建置流程..."
 
 # 檢查當前目錄
 echo "📁 當前目錄: $(pwd)"
@@ -20,6 +20,8 @@ required_files=(
     "client/package.json"
     "client/src/index.tsx"
     "client/public/index.html"
+    "server/package.json"
+    "server/index.js"
 )
 
 for file in "${required_files[@]}"; do
@@ -35,17 +37,15 @@ done
 echo "🧹 清理舊的建置檔案..."
 rm -rf client/build server/build
 
-# 安裝根目錄依賴
+# 安裝依賴
 echo "📦 安裝根目錄依賴..."
 npm install
 
-# 安裝前端依賴
 echo "📦 安裝前端依賴..."
 cd client
 npm install
 cd ..
 
-# 安裝後端依賴
 echo "📦 安裝後端依賴..."
 cd server
 npm install
@@ -57,6 +57,10 @@ cd client
 echo "📁 前端目錄: $(pwd)"
 echo "📋 前端目錄內容:"
 ls -la
+
+# 設定環境變數
+export CI=false
+export GENERATE_SOURCEMAP=false
 
 npm run build
 cd ..
@@ -105,13 +109,10 @@ echo "🔍 最終驗證..."
 echo "server/build/index.html 存在: $([ -f "server/build/index.html" ] && echo "✅" || echo "❌")"
 echo "server/build/static 存在: $([ -d "server/build/static" ] && echo "✅" || echo "❌")"
 
-# 顯示建置摘要
-echo ""
-echo "🎉 前端建置流程完成！"
-echo "📊 建置摘要:"
-echo "  - 前端建置: ✅ client/build/"
-echo "  - 後端建置: ✅ server/build/"
+# 檢查檔案大小
+echo "📊 建置檔案統計:"
+echo "  - client/build 大小: $(du -sh client/build | cut -f1)"
+echo "  - server/build 大小: $(du -sh server/build | cut -f1)"
 echo "  - 總檔案數: $(find server/build -type f | wc -l)"
-echo "  - 總大小: $(du -sh server/build | cut -f1)"
-echo ""
-echo "🚀 可以開始部署了！" 
+
+echo "🎉 Render.com 建置流程完成！" 
