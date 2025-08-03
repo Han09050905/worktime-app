@@ -1,118 +1,57 @@
 #!/bin/bash
 
-set -e  # 遇到錯誤就停止執行
+# Render 部署腳本 - 工時APP
+# 確保使用 npm 並正確安裝所有依賴項
 
-echo "🚀 Render.com 專用建置流程..."
+set -e  # 遇到錯誤時停止執行
 
-# 檢查當前目錄
-echo "📁 當前目錄: $(pwd)"
-echo "📋 目錄內容:"
-ls -la
+echo "🚀 開始 Render 部署構建..."
 
-# 檢查環境
-echo "🔍 檢查環境..."
-node --version
-npm --version
+# 檢查 Node.js 版本
+echo "📋 Node.js 版本: $(node --version)"
+echo "📋 npm 版本: $(npm --version)"
 
-# 檢查必要檔案
-echo "🔍 檢查必要檔案..."
-required_files=(
-    "client/package.json"
-    "client/src/index.tsx"
-    "client/public/index.html"
-    "server/package.json"
-    "server/index.js"
-)
+# 清理舊的 node_modules（如果存在）
+echo "🧹 清理舊的依賴項..."
+rm -rf node_modules
+rm -rf server/node_modules
+rm -rf client/node_modules
 
-for file in "${required_files[@]}"; do
-    if [ -f "$file" ]; then
-        echo "  ✅ $file"
-    else
-        echo "  ❌ $file (缺失)"
-        exit 1
-    fi
-done
+# 安裝根目錄依賴項
+echo "📦 安裝根目錄依賴項..."
+npm ci --only=production
 
-# 清理舊的建置檔案
-echo "🧹 清理舊的建置檔案..."
-rm -rf client/build server/build
-
-# 安裝依賴
-echo "📦 安裝根目錄依賴..."
-npm install --no-audit --no-fund
-
-echo "📦 安裝前端依賴..."
-cd client
-npm install --no-audit --no-fund
-cd ..
-
-echo "📦 安裝後端依賴..."
+# 安裝伺服器依賴項
+echo "📦 安裝伺服器依賴項..."
 cd server
-npm install --no-audit --no-fund
+npm ci --only=production
 cd ..
 
-# 建置前端
-echo "🔨 建置前端應用程式..."
+# 安裝客戶端依賴項
+echo "📦 安裝客戶端依賴項..."
 cd client
-echo "📁 前端目錄: $(pwd)"
-echo "📋 前端目錄內容:"
-ls -la
-
-# 設定環境變數
-export CI=false
-export GENERATE_SOURCEMAP=false
-
+npm ci
+echo "🔨 構建客戶端..."
 npm run build
 cd ..
 
-# 檢查建置結果
-echo "🔍 檢查建置結果..."
-if [ ! -d "client/build" ]; then
-    echo "❌ 前端建置失敗：client/build 目錄不存在"
-    echo "📋 當前目錄內容:"
-    ls -la
-    echo "📋 client 目錄內容:"
-    ls -la client/
+# 驗證伺服器依賴項
+echo "✅ 驗證伺服器依賴項..."
+cd server
+if [ ! -d "node_modules" ]; then
+    echo "❌ 伺服器 node_modules 不存在"
     exit 1
 fi
 
-if [ ! -f "client/build/index.html" ]; then
-    echo "❌ 前端建置失敗：index.html 檔案不存在"
-    echo "📋 client/build 目錄內容:"
-    ls -la client/build/
-    exit 1
+if [ ! -d "node_modules/express" ]; then
+    echo "❌ Express 依賴項未安裝"
+    echo "📋 重新安裝伺服器依賴項..."
+    npm ci --only=production
 fi
+cd ..
 
-echo "✅ 前端建置成功"
-echo "📋 建置檔案內容:"
-ls -la client/build/
-
-# 複製到伺服器目錄
-echo "📋 複製建置檔案到伺服器目錄..."
-cp -r client/build server/
-
-# 驗證複製結果
-echo "🔍 驗證複製結果..."
-if [ ! -f "server/build/index.html" ]; then
-    echo "❌ 複製失敗：server/build/index.html 不存在"
-    echo "📋 server 目錄內容:"
-    ls -la server/
-    exit 1
-fi
-
-echo "✅ 建置檔案複製成功"
-echo "📋 伺服器建置目錄內容:"
-ls -la server/build/
-
-# 最終驗證
-echo "🔍 最終驗證..."
-echo "server/build/index.html 存在: $([ -f "server/build/index.html" ] && echo "✅" || echo "❌")"
-echo "server/build/static 存在: $([ -d "server/build/static" ] && echo "✅" || echo "❌")"
-
-# 檢查檔案大小
-echo "📊 建置檔案統計:"
-echo "  - client/build 大小: $(du -sh client/build | cut -f1)"
-echo "  - server/build 大小: $(du -sh server/build | cut -f1)"
-echo "  - 總檔案數: $(find server/build -type f | wc -l)"
-
-echo "🎉 Render.com 建置流程完成！" 
+echo "✅ 構建完成！"
+echo "📋 目錄結構:"
+ls -la
+echo "📋 伺服器依賴項:"
+ls -la server/node_modules/ | head -10 
