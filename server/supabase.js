@@ -27,16 +27,27 @@ async function initDatabase() {
   try {
     console.log('🔧 初始化Supabase資料庫...');
     
-    // 建立projects表格
-    const { error: projectsError } = await supabase.rpc('create_projects_table');
-    if (projectsError && !projectsError.message.includes('already exists')) {
-      console.error('建立projects表格失敗:', projectsError);
+    // 檢查表格是否存在
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('count')
+      .limit(1);
+    
+    if (projectsError) {
+      console.log('⚠️ projects表格可能不存在，請確保已執行 supabase-schema.sql');
+    } else {
+      console.log('✅ projects表格存在');
     }
     
-    // 建立work_records表格
-    const { error: recordsError } = await supabase.rpc('create_work_records_table');
-    if (recordsError && !recordsError.message.includes('already exists')) {
-      console.error('建立work_records表格失敗:', recordsError);
+    const { data: records, error: recordsError } = await supabase
+      .from('work_records')
+      .select('count')
+      .limit(1);
+    
+    if (recordsError) {
+      console.log('⚠️ work_records表格可能不存在，請確保已執行 supabase-schema.sql');
+    } else {
+      console.log('✅ work_records表格存在');
     }
     
     console.log('✅ Supabase資料庫初始化完成');
