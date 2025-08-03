@@ -39,16 +39,16 @@ rm -rf client/build server/build
 
 # 安裝依賴
 echo "📦 安裝根目錄依賴..."
-npm install
+npm install --no-audit --no-fund
 
 echo "📦 安裝前端依賴..."
 cd client
-npm install
+npm install --no-audit --no-fund
 cd ..
 
 echo "📦 安裝後端依賴..."
 cd server
-npm install
+npm install --no-audit --no-fund
 cd ..
 
 # 建置前端

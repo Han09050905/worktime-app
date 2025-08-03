@@ -2,6 +2,10 @@
 node_modules/
 */node_modules/
 
+# Package manager - Using npm (keep package-lock.json, ignore yarn.lock)
+yarn.lock
+.pnp.*
+
 # Production builds
 client/build/
 server/build/

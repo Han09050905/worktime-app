@@ -36,16 +36,36 @@ if (process.env.NODE_ENV === 'production') {
     console.log('⚠️ 無法讀取工作目錄:', err.message);
   }
   
+  // 檢查上層目錄結構
+  try {
+    const parentDir = path.join(process.cwd(), '..');
+    const parentFiles = fs.readdirSync(parentDir);
+    console.log('📋 上層目錄內容:', parentFiles);
+  } catch (err) {
+    console.log('⚠️ 無法讀取上層目錄:', err.message);
+  }
+  
   // 定義靜態檔案路徑優先順序（針對 Render.com 環境）
   const staticPaths = [
+    // 標準路徑
     { path: path.join(__dirname, 'build'), name: '伺服器建置目錄' },
     { path: path.join(__dirname, '../client/build'), name: '前端建置目錄' },
     { path: path.join(__dirname, '../build'), name: '根目錄建置' },
+    
+    // 工作目錄路徑
     { path: path.join(process.cwd(), 'server/build'), name: '工作目錄伺服器建置' },
     { path: path.join(process.cwd(), 'client/build'), name: '工作目錄前端建置' },
     { path: path.join(process.cwd(), 'build'), name: '工作目錄根建置' },
+    
+    // 上層目錄路徑
     { path: path.join(__dirname, '../../client/build'), name: '上層前端建置' },
-    { path: path.join(__dirname, '../../build'), name: '上層根建置' }
+    { path: path.join(__dirname, '../../build'), name: '上層根建置' },
+    
+    // Render.com 特殊路徑
+    { path: path.join(process.cwd(), '../client/build'), name: 'Render工作目錄前端建置' },
+    { path: path.join(process.cwd(), '../build'), name: 'Render工作目錄根建置' },
+    { path: path.join(__dirname, '../../../client/build'), name: 'Render上層前端建置' },
+    { path: path.join(__dirname, '../../../build'), name: 'Render上層根建置' }
   ];
   
   console.log('🔍 檢查靜態檔案路徑:');
@@ -82,20 +102,21 @@ if (process.env.NODE_ENV === 'production') {
     }
   } else {
     console.log('⚠️ 未找到靜態檔案路徑，創建備用建置...');
-    createFallbackBuild();
-  }
-
-  function createFallbackBuild() {
+    console.log('🔍 嘗試在當前目錄創建建置...');
+    
+    // 嘗試在當前目錄創建建置
+    const currentBuildPath = path.join(__dirname, 'build');
     try {
-      const buildPath = path.join(__dirname, 'build');
-      fs.mkdirSync(buildPath, { recursive: true });
-      console.log('✅ 備用建置目錄創建成功');
+      if (!fs.existsSync(currentBuildPath)) {
+        fs.mkdirSync(currentBuildPath, { recursive: true });
+        console.log('✅ 當前目錄建置資料夾創建成功');
+      }
       
       // 複製備用 HTML 檔案作為 index.html
       const fallbackPath = path.join(__dirname, 'fallback.html');
       if (fs.existsSync(fallbackPath)) {
         const indexContent = fs.readFileSync(fallbackPath, 'utf8');
-        fs.writeFileSync(path.join(buildPath, 'index.html'), indexContent);
+        fs.writeFileSync(path.join(currentBuildPath, 'index.html'), indexContent);
         console.log('✅ 備用 HTML 檔案複製為 index.html');
       } else {
         // 創建一個基本的 index.html
@@ -113,6 +134,7 @@ if (process.env.NODE_ENV === 'production') {
         .api-test { margin-top: 20px; }
         button { background: #2196f3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px; }
         .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .debug { background: #fff3cd; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -122,10 +144,17 @@ if (process.env.NODE_ENV === 'production') {
             <strong>後端 API 伺服器正在運行</strong><br>
             前端建置檔案未找到，但 API 功能正常
         </div>
+        <div class="debug">
+            <strong>調試信息:</strong><br>
+            當前目錄: ${__dirname}<br>
+            工作目錄: ${process.cwd()}<br>
+            環境: ${process.env.NODE_ENV}
+        </div>
         <div class="api-test">
             <h3>API 測試</h3>
             <button onclick="testAPI('/api/projects')">測試專案 API</button>
             <button onclick="testAPI('/api/work-records')">測試工時記錄 API</button>
+            <button onclick="testAPI('/health')">測試健康檢查</button>
             <div id="api-result" class="result"></div>
         </div>
     </div>
@@ -144,12 +173,12 @@ if (process.env.NODE_ENV === 'production') {
     </script>
 </body>
 </html>`;
-        fs.writeFileSync(path.join(buildPath, 'index.html'), basicHtml);
+        fs.writeFileSync(path.join(currentBuildPath, 'index.html'), basicHtml);
         console.log('✅ 基本 HTML 檔案創建成功');
       }
       
       // 啟用靜態檔案服務
-      app.use(express.static(buildPath));
+      app.use(express.static(currentBuildPath));
       console.log('✅ 備用靜態檔案服務已啟用');
     } catch (error) {
       console.log('❌ 創建備用建置失敗:', error.message);
