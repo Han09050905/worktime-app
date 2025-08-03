@@ -3,7 +3,13 @@ services:
     name: worktime-app
     env: node
     plan: free
-    buildCommand: yarn install && cd server && yarn install && cd ../client && yarn install && yarn build && cd .. && cp -r client/build server/
+    buildCommand: |
+      yarn install
+      cd server && yarn install
+      cd ../client && yarn install && yarn build
+      cd .. && cp -r client/build server/
+      echo "構建完成，檢查檔案："
+      ls -la server/build/
     startCommand: yarn start
     envVars:
       - key: NODE_ENV
