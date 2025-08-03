@@ -8,9 +8,34 @@ services:
       echo "Directory contents:"
       ls -la
       
-      echo "Running frontend build script..."
-      chmod +x build-frontend.sh
-      ./build-frontend.sh
+      echo "Installing dependencies..."
+      npm install
+      cd client && npm install && cd ..
+      cd server && npm install && cd ..
+      
+      echo "Building frontend..."
+      cd client && npm run build && cd ..
+      
+      echo "Checking build output..."
+      if [ -d "client/build" ]; then
+        echo "✅ Frontend build successful"
+        ls -la client/build/
+        
+        echo "Copying build files to server directory..."
+        cp -r client/build server/
+        
+        echo "Verifying server build directory..."
+        if [ -f "server/build/index.html" ]; then
+          echo "✅ Build files copied successfully"
+          ls -la server/build/
+        else
+          echo "❌ Build files copy failed"
+          exit 1
+        fi
+      else
+        echo "❌ Frontend build failed"
+        exit 1
+      fi
       
       echo "Build process finished."
     startCommand: NODE_ENV=production node server/index.js
