@@ -10,12 +10,12 @@ services:
       cd ../client && yarn install && yarn build
       echo "檢查 client build 是否存在:"
       ls -la build/
-      cd .. && echo "複製 client/build 到 server/build"
-      cp -r client/build server/
-      echo "構建完成，檢查 server/build 檔案："
-      ls -la server/build/
-      echo "檢查根目錄內容："
-      ls -la
+      echo "複製 client/build 到 server/build"
+      cp -r build ../server/
+      cd ../server
+      echo "檢查 server/build 檔案："
+      ls -la build/
+      echo "構建完成"
     startCommand: yarn start
     envVars:
       - key: NODE_ENV
