@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: yarn install && cd server && yarn install && cd ../client && yarn install && yarn build
-    startCommand: cd server && yarn install && yarn start
+    startCommand: yarn start
     envVars:
       - key: NODE_ENV
         value: production
