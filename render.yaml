@@ -4,7 +4,8 @@ services:
     env: node
     plan: free
     buildCommand: |
-      echo "使用 npm 包管理器..."
+      echo "強制使用 npm..."
+      export npm_config_package_manager=npm
       npm --version
       echo "執行安裝腳本..."
       npm run render-install
