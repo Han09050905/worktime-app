@@ -5,8 +5,8 @@ node_modules/
 # 建置檔案
 build/
 dist/
-*/build/
-*/dist/
+client/build/
+client/dist/
 
 # 環境變數
 .env
