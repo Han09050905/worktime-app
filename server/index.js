@@ -232,29 +232,146 @@ if (process.env.NODE_ENV === 'production') {
   }
   
   if (!hasBuildFiles) {
-    console.log('⚠️ 未找到建置檔案，嘗試從 client/build 複製...');
+    console.log('⚠️ 未找到建置檔案，嘗試自動建置前端...');
     
-    // 嘗試從 client/build 複製
-    const clientBuildPath = path.join(process.cwd(), 'client/build');
+    // 嘗試自動建置前端
+    const clientPath = path.join(process.cwd(), 'client');
     const serverBuildPath = path.join(__dirname, 'build');
     
-    if (fs.existsSync(clientBuildPath)) {
+    if (fs.existsSync(clientPath)) {
       try {
-        // 確保目標目錄存在
-        if (!fs.existsSync(serverBuildPath)) {
-          fs.mkdirSync(serverBuildPath, { recursive: true });
+        console.log('🔨 開始自動建置前端...');
+        
+        // 檢查是否有 package.json
+        const clientPackagePath = path.join(clientPath, 'package.json');
+        if (!fs.existsSync(clientPackagePath)) {
+          throw new Error('client/package.json 不存在');
         }
         
-        // 複製建置檔案
+        // 檢查是否有 node_modules
+        const clientNodeModules = path.join(clientPath, 'node_modules');
+        if (!fs.existsSync(clientNodeModules)) {
+          console.log('📦 安裝前端依賴...');
+          const { execSync } = require('child_process');
+          execSync('npm install --no-audit --no-fund --legacy-peer-deps', { 
+            cwd: clientPath,
+            stdio: 'inherit'
+          });
+        }
+        
+        // 建置前端
+        console.log('🔨 建置前端應用程式...');
         const { execSync } = require('child_process');
-        execSync(`cp -r "${clientBuildPath}"/* "${serverBuildPath}/"`);
-        console.log('✅ 建置檔案複製成功');
+        execSync('npm run build', { 
+          cwd: clientPath,
+          stdio: 'inherit',
+          env: { ...process.env, CI: 'false', GENERATE_SOURCEMAP: 'false' }
+        });
+        
+        // 檢查建置結果
+        const clientBuildPath = path.join(clientPath, 'build');
+        if (fs.existsSync(clientBuildPath) && fs.existsSync(path.join(clientBuildPath, 'index.html'))) {
+          console.log('✅ 前端建置成功');
+          
+          // 複製到伺服器目錄
+          if (!fs.existsSync(serverBuildPath)) {
+            fs.mkdirSync(serverBuildPath, { recursive: true });
+          }
+          
+          const { execSync } = require('child_process');
+          execSync(`cp -r "${clientBuildPath}"/* "${serverBuildPath}/"`);
+          console.log('✅ 建置檔案複製成功');
+        } else {
+          throw new Error('前端建置失敗');
+        }
       } catch (error) {
-        console.log('❌ 複製建置檔案失敗:', error.message);
+        console.log('❌ 自動建置失敗:', error.message);
+        console.log('📋 創建備用建置...');
+        createFallbackBuild();
       }
     } else {
-      console.log('❌ client/build 目錄不存在');
+      console.log('❌ client 目錄不存在，創建備用建置...');
+      createFallbackBuild();
     }
+  }
+}
+
+function createFallbackBuild() {
+  try {
+    const buildPath = path.join(__dirname, 'build');
+    if (!fs.existsSync(buildPath)) {
+      fs.mkdirSync(buildPath, { recursive: true });
+      console.log('✅ 備用建置目錄創建成功');
+    }
+    
+    // 複製備用 HTML 檔案作為 index.html
+    const fallbackPath = path.join(__dirname, 'fallback.html');
+    if (fs.existsSync(fallbackPath)) {
+      const indexContent = fs.readFileSync(fallbackPath, 'utf8');
+      fs.writeFileSync(path.join(buildPath, 'index.html'), indexContent);
+      console.log('✅ 備用 HTML 檔案複製為 index.html');
+    } else {
+      // 創建一個基本的 index.html
+      const basicHtml = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工時統計應用程式</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .status { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .api-test { margin-top: 20px; }
+        button { background: #2196f3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .debug { background: #fff3cd; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>工時統計應用程式</h1>
+        <div class="status">
+            <strong>後端 API 伺服器正在運行</strong><br>
+            前端建置檔案未找到，但 API 功能正常
+        </div>
+        <div class="debug">
+            <strong>調試信息:</strong><br>
+            當前目錄: ${__dirname}<br>
+            工作目錄: ${process.cwd()}<br>
+            環境: ${process.env.NODE_ENV}<br>
+            時間: ${new Date().toISOString()}<br>
+            自動建置: 失敗，使用備用建置
+        </div>
+        <div class="api-test">
+            <h3>API 測試</h3>
+            <button onclick="testAPI('/api/projects')">測試專案 API</button>
+            <button onclick="testAPI('/api/work-records')">測試工時記錄 API</button>
+            <button onclick="testAPI('/health')">測試健康檢查</button>
+            <div id="api-result" class="result"></div>
+        </div>
+    </div>
+    <script>
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '測試中...';
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                resultDiv.innerHTML = '✅ ' + endpoint + ' 正常\\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.innerHTML = '❌ ' + endpoint + ' 錯誤\\n' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>`;
+      fs.writeFileSync(path.join(buildPath, 'index.html'), basicHtml);
+      console.log('✅ 基本 HTML 檔案創建成功');
+    }
+  } catch (error) {
+    console.log('❌ 創建備用建置失敗:', error.message);
   }
 }
 

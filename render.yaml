@@ -13,9 +13,6 @@ services:
       node --version
       npm --version
       
-      # 明確指定使用 npm，避免 Yarn 衝突
-      echo "📦 明確指定使用 npm 作為套件管理器..."
-      
       # 檢查必要檔案
       echo "🔍 檢查必要檔案..."
       required_files=(
@@ -35,113 +32,22 @@ services:
           fi
       done
       
-      # 清理舊的建置檔案
-      echo "🧹 清理舊的建置檔案..."
-      rm -rf client/build server/build
-      
-      # 安裝依賴 - 明確使用 npm
+      # 安裝依賴
       echo "📦 安裝根目錄依賴..."
-      /usr/bin/npm install --userconfig=./render-npmrc
+      npm install --no-audit --no-fund --legacy-peer-deps
       
       echo "📦 安裝前端依賴..."
       cd client
-      /usr/bin/npm install --userconfig=../render-npmrc
+      npm install --no-audit --no-fund --legacy-peer-deps
       cd ..
       
       echo "📦 安裝後端依賴..."
       cd server
-      /usr/bin/npm install --userconfig=../render-npmrc
+      npm install --no-audit --no-fund --legacy-peer-deps
       cd ..
       
-      # 建置前端
-      echo "🔨 建置前端應用程式..."
-      cd client
-      echo "📁 前端目錄: $(pwd)"
-      echo "📋 前端目錄內容:"
-      ls -la
-      
-      # 設定環境變數
-      export CI=false
-      export GENERATE_SOURCEMAP=false
-      
-      /usr/bin/npm run build
-      cd ..
-      
-      # 檢查建置結果
-      echo "🔍 檢查建置結果..."
-      if [ ! -d "client/build" ]; then
-          echo "❌ 前端建置失敗：client/build 目錄不存在"
-          echo "📋 當前目錄內容:"
-          ls -la
-          echo "📋 client 目錄內容:"
-          ls -la client/
-          exit 1
-      fi
-      
-      if [ ! -f "client/build/index.html" ]; then
-          echo "❌ 前端建置失敗：index.html 檔案不存在"
-          echo "📋 client/build 目錄內容:"
-          ls -la client/build/
-          exit 1
-      fi
-      
-      echo "✅ 前端建置成功"
-      echo "📋 建置檔案內容:"
-      ls -la client/build/
-      
-      # 複製到伺服器目錄
-      echo "📋 複製建置檔案到伺服器目錄..."
-      cp -r client/build server/
-      
-      # 驗證複製結果
-      echo "🔍 驗證複製結果..."
-      if [ ! -f "server/build/index.html" ]; then
-          echo "❌ 複製失敗：server/build/index.html 不存在"
-          echo "📋 server 目錄內容:"
-          ls -la server/
-          exit 1
-      fi
-      
-      echo "✅ 建置檔案複製成功"
-      echo "📋 伺服器建置目錄內容:"
-      ls -la server/build/
-      
-      # 最終驗證
-      echo "🔍 最終驗證..."
-      echo "server/build/index.html 存在: $([ -f "server/build/index.html" ] && echo "✅" || echo "❌")"
-      echo "server/build/static 存在: $([ -d "server/build/static" ] && echo "✅" || echo "❌")"
-      
-      # 檢查檔案大小
-      echo "📊 建置檔案統計:"
-      echo "  - client/build 大小: $(du -sh client/build | cut -f1)"
-      echo "  - server/build 大小: $(du -sh server/build | cut -f1)"
-      echo "  - 總檔案數: $(find server/build -type f | wc -l)"
-      
-      # 列出所有可能的建置路徑
-      echo "🔍 列出所有可能的建置路徑:"
-      possible_paths=(
-          "server/build"
-          "client/build"
-          "build"
-          "../client/build"
-          "../build"
-          "../../client/build"
-          "../../build"
-      )
-      
-      for p in "${possible_paths[@]}"; do
-          if [ -d "$p" ]; then
-              echo "  ✅ $p 存在"
-              ls -la "$p"
-          else
-              echo "  ❌ $p 不存在"
-          fi
-      done
-      
-      # 確保建置檔案權限正確
-      echo "🔧 設定建置檔案權限..."
-      chmod -R 755 server/build/
-      chmod -R 755 client/build/
+      echo "✅ 依賴安裝完成"
+      echo "📋 伺服器將在啟動時自動建置前端"
       
       echo "🎉 Render.com 建置流程完成！"
     startCommand: NODE_ENV=production node server/index.js
