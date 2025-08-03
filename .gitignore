@@ -5,6 +5,12 @@ node_modules/
 # Package manager - Using npm (keep package-lock.json, ignore yarn.lock)
 yarn.lock
 .pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # Production builds
 client/build/

@@ -13,6 +13,9 @@ services:
       node --version
       npm --version
       
+      # 明確指定使用 npm，避免 Yarn 衝突
+      echo "📦 明確指定使用 npm 作為套件管理器..."
+      
       # 檢查必要檔案
       echo "🔍 檢查必要檔案..."
       required_files=(
@@ -36,18 +39,18 @@ services:
       echo "🧹 清理舊的建置檔案..."
       rm -rf client/build server/build
       
-      # 安裝依賴
+      # 安裝依賴 - 明確使用 npm
       echo "📦 安裝根目錄依賴..."
-      npm install --no-audit --no-fund
+      /usr/bin/npm install --userconfig=./render-npmrc
       
       echo "📦 安裝前端依賴..."
       cd client
-      npm install --no-audit --no-fund
+      /usr/bin/npm install --userconfig=../render-npmrc
       cd ..
       
       echo "📦 安裝後端依賴..."
       cd server
-      npm install --no-audit --no-fund
+      /usr/bin/npm install --userconfig=../render-npmrc
       cd ..
       
       # 建置前端
@@ -61,7 +64,7 @@ services:
       export CI=false
       export GENERATE_SOURCEMAP=false
       
-      npm run build
+      /usr/bin/npm run build
       cd ..
       
       # 檢查建置結果

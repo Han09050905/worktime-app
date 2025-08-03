@@ -1,0 +1,7 @@
+# Render.com 專用 npm 配置
+registry=https://registry.npmjs.org/
+package-lock=true
+save-exact=true
+legacy-peer-deps=true
+audit=false
+fund=false 
