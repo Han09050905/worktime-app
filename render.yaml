@@ -114,6 +114,27 @@ services:
       echo "  - server/build 大小: $(du -sh server/build | cut -f1)"
       echo "  - 總檔案數: $(find server/build -type f | wc -l)"
       
+      # 列出所有可能的建置路徑
+      echo "🔍 列出所有可能的建置路徑:"
+      possible_paths=(
+          "server/build"
+          "client/build"
+          "build"
+          "../client/build"
+          "../build"
+          "../../client/build"
+          "../../build"
+      )
+      
+      for p in "${possible_paths[@]}"; do
+          if [ -d "$p" ]; then
+              echo "  ✅ $p 存在"
+              ls -la "$p"
+          else
+              echo "  ❌ $p 不存在"
+          fi
+      done
+      
       echo "🎉 Render.com 建置流程完成！"
     startCommand: NODE_ENV=production node server/index.js
     envVars:

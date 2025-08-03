@@ -18,12 +18,34 @@ if (process.env.NODE_ENV === 'production') {
   
   console.log('🔧 生產環境：準備靜態檔案...');
   console.log('當前目錄:', __dirname);
+  console.log('工作目錄:', process.cwd());
   
-  // 定義靜態檔案路徑優先順序
+  // 列出當前目錄內容
+  try {
+    const currentFiles = fs.readdirSync(__dirname);
+    console.log('📋 當前目錄內容:', currentFiles);
+  } catch (err) {
+    console.log('⚠️ 無法讀取當前目錄:', err.message);
+  }
+  
+  // 列出工作目錄內容
+  try {
+    const workingFiles = fs.readdirSync(process.cwd());
+    console.log('📋 工作目錄內容:', workingFiles);
+  } catch (err) {
+    console.log('⚠️ 無法讀取工作目錄:', err.message);
+  }
+  
+  // 定義靜態檔案路徑優先順序（針對 Render.com 環境）
   const staticPaths = [
     { path: path.join(__dirname, 'build'), name: '伺服器建置目錄' },
     { path: path.join(__dirname, '../client/build'), name: '前端建置目錄' },
-    { path: path.join(__dirname, '../build'), name: '根目錄建置' }
+    { path: path.join(__dirname, '../build'), name: '根目錄建置' },
+    { path: path.join(process.cwd(), 'server/build'), name: '工作目錄伺服器建置' },
+    { path: path.join(process.cwd(), 'client/build'), name: '工作目錄前端建置' },
+    { path: path.join(process.cwd(), 'build'), name: '工作目錄根建置' },
+    { path: path.join(__dirname, '../../client/build'), name: '上層前端建置' },
+    { path: path.join(__dirname, '../../build'), name: '上層根建置' }
   ];
   
   console.log('🔍 檢查靜態檔案路徑:');
@@ -36,6 +58,14 @@ if (process.env.NODE_ENV === 'production') {
     if (exists && !staticPath) {
       staticPath = checkPath;
       console.log(`✅ 使用靜態檔案路徑: ${checkPath}`);
+      
+      // 列出找到的目錄內容
+      try {
+        const files = fs.readdirSync(checkPath);
+        console.log(`📋 ${name} 內容:`, files);
+      } catch (err) {
+        console.log(`⚠️ 無法讀取 ${name}:`, err.message);
+      }
     }
   }
   
