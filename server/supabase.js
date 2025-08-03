@@ -1,3 +1,6 @@
+// 載入環境變數
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+
 let createClient;
 try {
   const supabaseModule = require('@supabase/supabase-js');
@@ -7,8 +10,6 @@ try {
   console.error('請確保已安裝 Supabase 依賴: npm install @supabase/supabase-js');
   process.exit(1);
 }
-
-require('dotenv').config();
 
 // Supabase配置
 const supabaseUrl = process.env.SUPABASE_URL;

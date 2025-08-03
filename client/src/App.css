@@ -1,36 +1,40 @@
-.App {
-  min-height: 100vh;
-  background-color: #f5f5f5;
+/* 自定義動畫 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.app-header {
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
 }
 
-.app-header h1 {
-  margin: 0;
-  padding: 20px 0 10px 0;
-  color: #333;
-  font-size: 24px;
+/* 自定義滾動條 */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.app-header .nav-tabs {
-  margin-bottom: 0;
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
 
-.app-header .nav-tab {
-  color: #666;
-  text-decoration: none;
-  font-weight: 500;
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
-.app-header .nav-tab:hover {
-  color: #007bff;
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.app-header .nav-tab.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
+/* 表格響應式設計 */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+  }
 } 

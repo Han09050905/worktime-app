@@ -1,25 +1,8 @@
 #!/bin/bash
 
-set -e  # 遇到錯誤就停止執行
+echo "🚀 啟動工時管理應用程式..."
 
-echo "🚀 啟動工時統計應用程式..."
-
-# 檢查環境
-echo "🔍 檢查環境..."
-if [ -z "$NODE_ENV" ]; then
-    export NODE_ENV=development
-    echo "📝 設定 NODE_ENV=development"
-fi
-
-# 檢查建置檔案
-echo "🔍 檢查建置檔案..."
-if [ "$NODE_ENV" = "production" ] && [ ! -f "server/build/index.html" ]; then
-    echo "📋 生產環境建置檔案不存在，執行建置..."
-    ./build.sh
-fi
-
-# 檢查依賴
-echo "🔍 檢查依賴..."
+# 檢查是否已安裝依賴
 if [ ! -d "node_modules" ]; then
     echo "📦 安裝根目錄依賴..."
     npm install
@@ -30,12 +13,23 @@ if [ ! -d "server/node_modules" ]; then
     cd server && npm install && cd ..
 fi
 
-# 啟動伺服器
-echo "🚀 啟動伺服器..."
-echo "📊 伺服器資訊:"
-echo "  - 環境: $NODE_ENV"
-echo "  - 端口: ${PORT:-3001}"
-echo "  - 資料庫: Supabase"
+if [ ! -d "client/node_modules" ]; then
+    echo "📦 安裝前端依賴..."
+    cd client && npm install && cd ..
+fi
 
-# 啟動伺服器
-node server/index.js 
+# 檢查環境變數檔案
+if [ ! -f ".env" ]; then
+    echo "⚠️  未找到 .env 檔案，請複製 env.example 並設定 Supabase 憑證"
+    echo "cp env.example .env"
+    echo "然後編輯 .env 檔案設定您的 Supabase URL 和 API Key"
+    exit 1
+fi
+
+echo "✅ 所有依賴已安裝"
+echo "🌐 啟動開發伺服器..."
+echo "📱 前端: http://localhost:3000"
+echo "🔧 後端: http://localhost:3001"
+
+# 同時啟動前端和後端
+npm run dev 
