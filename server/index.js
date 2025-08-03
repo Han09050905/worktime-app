@@ -62,7 +62,8 @@ app.use('/api/*', (req, res) => {
 if (NODE_ENV === 'production') {
   const fs = require('fs');
   
-  console.log('🔧 生產環境：準備靜態檔案...');
+  console.log('�� 生產環境：準備靜態檔案...');
+  console.log('📁 當前目錄:', __dirname);
   
   // 定義靜態檔案路徑優先順序
   const staticPaths = [
@@ -70,6 +71,11 @@ if (NODE_ENV === 'production') {
     { path: path.join(__dirname, '../client/build'), name: '前端建置目錄' },
     { path: path.join(__dirname, '../build'), name: '根目錄建置' }
   ];
+  
+  console.log('🔍 檢查靜態檔案路徑:');
+  for (const { path: checkPath, name } of staticPaths) {
+    console.log(`  - ${checkPath} (${name}): ${fs.existsSync(checkPath) ? '✅ 存在' : '❌ 不存在'}`);
+  }
   
   let staticPath = null;
   
@@ -89,6 +95,13 @@ if (NODE_ENV === 'production') {
     console.log('✅ 靜態檔案服務已啟用');
   } else {
     console.log('⚠️ 未找到靜態檔案路徑');
+    console.log('📋 當前目錄內容:');
+    try {
+      console.log('  - 當前目錄:', fs.readdirSync(__dirname));
+      console.log('  - 上層目錄:', fs.readdirSync(path.join(__dirname, '..')));
+    } catch (err) {
+      console.log('  - 無法讀取目錄:', err.message);
+    }
   }
 
   // 所有其他請求都返回React應用程式
@@ -98,6 +111,11 @@ if (NODE_ENV === 'production') {
       path.join(__dirname, '../client/build/index.html'),
       path.join(__dirname, '../build/index.html')
     ];
+    
+    console.log('🔍 檢查 index.html 路徑:');
+    for (const indexPath of indexPaths) {
+      console.log(`  - ${indexPath}: ${fs.existsSync(indexPath) ? '✅ 存在' : '❌ 不存在'}`);
+    }
     
     for (const indexPath of indexPaths) {
       if (fs.existsSync(indexPath)) {
