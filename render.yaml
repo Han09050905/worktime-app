@@ -12,7 +12,7 @@ services:
       echo "構建客戶端..."
       cd client && npm run build
       echo "構建完成"
-    startCommand: cd server && node index.js
+    startCommand: chmod +x start.sh && ./start.sh
     envVars:
       - key: NODE_ENV
         value: production
