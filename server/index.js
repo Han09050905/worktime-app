@@ -19,34 +19,47 @@ if (process.env.NODE_ENV === 'production') {
   console.log('🔧 生產環境：準備靜態檔案...');
   console.log('當前目錄:', __dirname);
   
-  // 檢查並建置前端（如果需要）
-  const buildPath = path.join(__dirname, 'build');
-  const clientBuildPath = path.join(__dirname, '../client/build');
+  // 定義靜態檔案路徑優先順序
+  const staticPaths = [
+    { path: path.join(__dirname, 'build'), name: '伺服器建置目錄' },
+    { path: path.join(__dirname, '../client/build'), name: '前端建置目錄' },
+    { path: path.join(__dirname, '../build'), name: '根目錄建置' }
+  ];
   
-  if (!fs.existsSync(buildPath)) {
-    console.log('📋 伺服器目錄中沒有建置檔案，檢查是否有前端建置...');
+  console.log('🔍 檢查靜態檔案路徑:');
+  let staticPath = null;
+  
+  for (const { path: checkPath, name } of staticPaths) {
+    const exists = fs.existsSync(checkPath);
+    console.log(`  ${exists ? '✅' : '❌'} ${checkPath} (${name})`);
     
-    // 檢查是否有前端建置檔案可以複製
-    if (fs.existsSync(clientBuildPath)) {
-      console.log('✅ 找到前端建置檔案，正在複製...');
-      try {
-        const { execSync } = require('child_process');
-        execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
-        console.log('✅ 前端建置檔案複製成功');
-      } catch (error) {
-        console.log('❌ 複製前端建置檔案失敗:', error.message);
-        createFallbackBuild();
-      }
-    } else {
-      console.log('❌ 前端建置檔案不存在，創建備用建置...');
-      createFallbackBuild();
+    if (exists && !staticPath) {
+      staticPath = checkPath;
+      console.log(`✅ 使用靜態檔案路徑: ${checkPath}`);
     }
+  }
+  
+  if (staticPath) {
+    app.use(express.static(staticPath));
+    console.log('✅ 靜態檔案服務已啟用');
+    
+    // 列出靜態檔案目錄內容
+    try {
+      const files = fs.readdirSync(staticPath);
+      console.log('📋 靜態檔案目錄內容:', files);
+    } catch (err) {
+      console.log('⚠️ 無法讀取靜態檔案目錄:', err.message);
+    }
+  } else {
+    console.log('⚠️ 未找到靜態檔案路徑，創建備用建置...');
+    createFallbackBuild();
   }
 
   function createFallbackBuild() {
     try {
+      const buildPath = path.join(__dirname, 'build');
       fs.mkdirSync(buildPath, { recursive: true });
-      console.log('✅ 建置目錄創建成功');
+      console.log('✅ 備用建置目錄創建成功');
       
       // 複製備用 HTML 檔案作為 index.html
       const fallbackPath = path.join(__dirname, 'fallback.html');
@@ -104,59 +117,12 @@ if (process.env.NODE_ENV === 'production') {
         fs.writeFileSync(path.join(buildPath, 'index.html'), basicHtml);
         console.log('✅ 基本 HTML 檔案創建成功');
       }
-    } catch (error) {
-      console.log('❌ 創建建置目錄失敗:', error.message);
-    }
-  }
-  
-  // 嘗試多個可能的靜態檔案路徑
-  const possiblePaths = [
-    path.join(__dirname, 'build'),
-    path.join(__dirname, '../client/build'),
-    path.join(__dirname, '../../client/build'),
-    path.join(__dirname, '../build'),
-    path.join(__dirname, '../../build')
-  ];
-  
-  console.log('嘗試的靜態檔案路徑:');
-  possiblePaths.forEach((p, i) => {
-    const exists = fs.existsSync(p);
-    console.log(`  ${i + 1}. ${p} ${exists ? '✅' : '❌'}`);
-  });
-  
-  let staticPath = null;
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      staticPath = p;
-      console.log(`✅ 找到靜態檔案路徑: ${p}`);
-      break;
-    }
-  }
-  
-  if (staticPath) {
-    app.use(express.static(staticPath));
-    console.log('✅ 靜態檔案服務已啟用');
-    
-    // 列出靜態檔案目錄內容
-    try {
-      const files = fs.readdirSync(staticPath);
-      console.log('靜態檔案目錄內容:', files);
-    } catch (err) {
-      console.log('無法讀取靜態檔案目錄:', err.message);
-    }
-  } else {
-    console.log('⚠️ 未找到靜態檔案路徑，跳過靜態檔案服務');
-    
-    // 列出當前目錄和上層目錄內容
-    try {
-      const currentDir = fs.readdirSync(__dirname);
-      console.log('當前目錄內容:', currentDir);
       
-      const parentDir = path.join(__dirname, '..');
-      const parentFiles = fs.readdirSync(parentDir);
-      console.log('上層目錄內容:', parentFiles);
-    } catch (err) {
-      console.log('無法讀取目錄:', err.message);
+      // 啟用靜態檔案服務
+      app.use(express.static(buildPath));
+      console.log('✅ 備用靜態檔案服務已啟用');
+    } catch (error) {
+      console.log('❌ 創建備用建置失敗:', error.message);
     }
   }
 }
@@ -385,44 +351,37 @@ app.delete('/api/projects/:id', async (req, res) => {
 // 生產環境：所有其他請求都返回React應用程式
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    const indexPath = path.join(__dirname, 'build/index.html');
-    console.log('嘗試提供 index.html:', indexPath);
+    // 定義 index.html 路徑優先順序
+    const indexPaths = [
+      { path: path.join(__dirname, 'build/index.html'), name: '伺服器建置目錄' },
+      { path: path.join(__dirname, '../client/build/index.html'), name: '前端建置目錄' },
+      { path: path.join(__dirname, '../build/index.html'), name: '根目錄建置' }
+    ];
     
-    // 檢查檔案是否存在
-    if (require('fs').existsSync(indexPath)) {
-      console.log('✅ index.html 檔案存在，正在提供...');
-      res.sendFile(indexPath);
+    console.log('🔍 尋找 index.html 檔案...');
+    
+    // 嘗試找到可用的 index.html
+    for (const { path: indexPath, name } of indexPaths) {
+      if (require('fs').existsSync(indexPath)) {
+        console.log(`✅ 找到 index.html: ${indexPath} (${name})`);
+        return res.sendFile(indexPath);
+      }
+    }
+    
+    // 如果都找不到，使用備用 HTML
+    const fallbackPath = path.join(__dirname, 'fallback.html');
+    if (require('fs').existsSync(fallbackPath)) {
+      console.log('📄 使用備用 HTML 檔案');
+      return res.sendFile(fallbackPath);
     } else {
-      console.log('❌ index.html 檔案不存在');
-      console.log('當前目錄內容:', require('fs').readdirSync(__dirname));
-      
-      // 嘗試其他可能的路徑
-      const alternativePaths = [
-        path.join(__dirname, '../client/build/index.html'),
-        path.join(__dirname, '../../client/build/index.html'),
-        path.join(__dirname, '../build/index.html')
-      ];
-      
-      for (const altPath of alternativePaths) {
-        if (require('fs').existsSync(altPath)) {
-          console.log(`✅ 找到替代路徑: ${altPath}`);
-          return res.sendFile(altPath);
-        }
-      }
-      
-      // 如果都找不到，使用備用 HTML
-      const fallbackPath = path.join(__dirname, 'fallback.html');
-      if (require('fs').existsSync(fallbackPath)) {
-        console.log('📄 使用備用 HTML 檔案');
-        return res.sendFile(fallbackPath);
-      } else {
-        // 如果連備用檔案都沒有，返回錯誤
-        res.status(404).json({ 
-          error: 'index.html not found',
-          message: '前端應用程式檔案未找到，請檢查建置流程',
-          paths: [indexPath, ...alternativePaths]
-        });
-      }
+      // 如果連備用檔案都沒有，返回錯誤
+      console.log('❌ 未找到任何可用的 HTML 檔案');
+      res.status(404).json({ 
+        error: 'index.html not found',
+        message: '前端應用程式檔案未找到，請檢查建置流程',
+        searched_paths: indexPaths.map(p => p.path),
+        fallback_path: fallbackPath
+      });
     }
   });
 }
