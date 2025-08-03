@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "工時管理應用程式",
   "main": "server/index.js",
+  "packageManager": "npm@9.8.1",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "cd server && npm run dev",
