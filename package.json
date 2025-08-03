@@ -11,7 +11,8 @@
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "start": "node server/index.js",
     "build": "npm run install-all && cd client && npm run build",
-    "render-build": "npm run build"
+    "render-build": "npm run build",
+    "render-install": "npm install && cd server && npm install && cd ../client && npm install"
   },
   "keywords": ["工時管理", "專案管理", "時間追蹤", "React", "Node.js", "Supabase"],
   "author": "工時APP開發團隊",
