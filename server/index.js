@@ -24,21 +24,38 @@ if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(__dirname, '../client/build');
   
   if (!fs.existsSync(buildPath)) {
-    console.log('📋 伺服器目錄中沒有建置檔案，檢查是否有前端建置...');
+    console.log('📋 伺服器目錄中沒有建置檔案，嘗試建置前端...');
     
-    // 檢查是否有前端建置檔案可以複製
-    if (fs.existsSync(clientBuildPath)) {
-      console.log('✅ 找到前端建置檔案，正在複製...');
+    // 嘗試建置前端
+    const clientPath = path.join(__dirname, '../client');
+    if (fs.existsSync(clientPath)) {
+      console.log('✅ 找到 client 目錄，嘗試建置前端...');
       try {
         const { execSync } = require('child_process');
-        execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
-        console.log('✅ 前端建置檔案複製成功');
+        
+        // 安裝依賴
+        console.log('📦 安裝前端依賴...');
+        execSync('npm install', { cwd: clientPath, stdio: 'pipe' });
+        
+        // 建置前端
+        console.log('🔨 建置前端應用程式...');
+        execSync('npm run build', { cwd: clientPath, stdio: 'pipe' });
+        
+        // 複製建置檔案
+        if (fs.existsSync(clientBuildPath)) {
+          console.log('📋 複製建置檔案到伺服器目錄...');
+          execSync(`cp -r "${clientBuildPath}" "${buildPath}"`);
+          console.log('✅ 前端建置檔案複製成功');
+        } else {
+          console.log('❌ 前端建置失敗，client/build 目錄不存在');
+          createFallbackBuild();
+        }
       } catch (error) {
-        console.log('❌ 複製前端建置檔案失敗:', error.message);
+        console.log('❌ 建置過程失敗:', error.message);
         createFallbackBuild();
       }
     } else {
-      console.log('❌ 前端建置檔案不存在，創建備用建置...');
+      console.log('❌ client 目錄不存在，創建備用建置...');
       createFallbackBuild();
     }
   }
