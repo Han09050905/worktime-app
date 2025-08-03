@@ -4,15 +4,10 @@ services:
     env: node
     plan: free
     buildCommand: |
-      echo "強制使用 npm..."
-      export npm_config_package_manager=npm
-      npm --version
-      echo "執行安裝腳本..."
-      npm run render-install
-      echo "構建客戶端..."
-      cd client && npm run build
-      echo "構建完成"
-    startCommand: chmod +x start.sh && ./start.sh
+      npm install
+      cd server && npm install
+      cd ../client && npm install && npm run build
+    startCommand: cd server && node index.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -20,7 +15,5 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: npm_config_package_manager
-        value: npm
     healthCheckPath: /health
     autoDeploy: true 
