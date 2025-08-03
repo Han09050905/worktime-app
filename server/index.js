@@ -61,11 +61,17 @@ if (process.env.NODE_ENV === 'production') {
     { path: path.join(__dirname, '../../client/build'), name: '上層前端建置' },
     { path: path.join(__dirname, '../../build'), name: '上層根建置' },
     
-    // Render.com 特殊路徑
+    // Render.com 特殊路徑（根據實際目錄結構調整）
     { path: path.join(process.cwd(), '../client/build'), name: 'Render工作目錄前端建置' },
     { path: path.join(process.cwd(), '../build'), name: 'Render工作目錄根建置' },
     { path: path.join(__dirname, '../../../client/build'), name: 'Render上層前端建置' },
-    { path: path.join(__dirname, '../../../build'), name: 'Render上層根建置' }
+    { path: path.join(__dirname, '../../../build'), name: 'Render上層根建置' },
+    
+    // Render.com 實際路徑（根據日誌顯示的目錄結構）
+    { path: path.join(process.cwd(), 'client/build'), name: 'Render當前目錄前端建置' },
+    { path: path.join(process.cwd(), 'build'), name: 'Render當前目錄根建置' },
+    { path: path.join(__dirname, '../client/build'), name: 'Render伺服器相對前端建置' },
+    { path: path.join(__dirname, '../build'), name: 'Render伺服器相對根建置' }
   ];
   
   console.log('🔍 檢查靜態檔案路徑:');
@@ -148,7 +154,8 @@ if (process.env.NODE_ENV === 'production') {
             <strong>調試信息:</strong><br>
             當前目錄: ${__dirname}<br>
             工作目錄: ${process.cwd()}<br>
-            環境: ${process.env.NODE_ENV}
+            環境: ${process.env.NODE_ENV}<br>
+            時間: ${new Date().toISOString()}
         </div>
         <div class="api-test">
             <h3>API 測試</h3>
@@ -203,6 +210,53 @@ app.get('/health', (req, res) => {
 
 // 初始化Supabase
 initDatabase();
+
+// 生產環境：檢查並創建建置檔案
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔍 生產環境：檢查建置檔案...');
+  
+  // 檢查是否有建置檔案
+  const buildPaths = [
+    path.join(__dirname, 'build'),
+    path.join(process.cwd(), 'client/build'),
+    path.join(process.cwd(), 'build')
+  ];
+  
+  let hasBuildFiles = false;
+  for (const buildPath of buildPaths) {
+    if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
+      console.log(`✅ 找到建置檔案: ${buildPath}`);
+      hasBuildFiles = true;
+      break;
+    }
+  }
+  
+  if (!hasBuildFiles) {
+    console.log('⚠️ 未找到建置檔案，嘗試從 client/build 複製...');
+    
+    // 嘗試從 client/build 複製
+    const clientBuildPath = path.join(process.cwd(), 'client/build');
+    const serverBuildPath = path.join(__dirname, 'build');
+    
+    if (fs.existsSync(clientBuildPath)) {
+      try {
+        // 確保目標目錄存在
+        if (!fs.existsSync(serverBuildPath)) {
+          fs.mkdirSync(serverBuildPath, { recursive: true });
+        }
+        
+        // 複製建置檔案
+        const { execSync } = require('child_process');
+        execSync(`cp -r "${clientBuildPath}"/* "${serverBuildPath}/"`);
+        console.log('✅ 建置檔案複製成功');
+      } catch (error) {
+        console.log('❌ 複製建置檔案失敗:', error.message);
+      }
+    } else {
+      console.log('❌ client/build 目錄不存在');
+    }
+  }
+}
 
 // API 路由
 
